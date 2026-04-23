@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>可连续滚动的伪网页展示</title>
+  <style>
+    :root {
+      --bg: #304543;   
+      --panel: #ffffff;
+      --text: #f7f4ef;
+      --muted: #6f7a77;
+      --line: rgba(31, 45, 42, 0.12);
+      --shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+      --radius: 29px;
+      --max-width: 1200px;
+      --slide-width: 860px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+  margin: 0;
+  font-family: "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+}
+    .page-shell {
+      width: 100%;
+      min-height: 100vh;
+    }
+
+    .hero {
+      padding: 96px 24px 56px;
+      text-align: center;
+    }
+
+    .hero__inner {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .eyebrow {
+      display: inline-block;
+      margin-bottom: 16px;
+      padding: 8px 14px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      font-size: 13px;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.6);
+      backdrop-filter: blur(10px);
+    }
+
+    h1 {
+      margin: 0 0 14px;
+      font-size: clamp(34px, 5vw, 64px);
+      line-height: 1.08;
+      letter-spacing: -0.02em;
+    }
+
+    .hero p {
+      max-width: 760px;
+      margin: 0 auto;
+      font-size: 16px;
+      color: var(--muted);
+    }
+
+    .quick-nav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  backdrop-filter: blur(18px);
+  background: linear-gradient(
+    180deg,
+    rgba(244, 241, 235, 0.18),
+    rgba(244, 241, 235, 0.08)
+  );
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+}
+
+    .quick-nav__inner {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 14px 24px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .quick-nav a {
+  text-decoration: none;
+  color: #2f423f;
+  border: 1px solid rgba(47, 66, 63, 0.10);
+  padding: 10px 14px;
+  border-radius: 999px;
+  font-size: 14px;
+  background: rgba(255, 255, 255, 0.42);
+  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+
+    .quick-nav a:hover {
+  transform: translateY(-1px);
+  border-color: rgba(47, 66, 63, 0.18);
+  background: rgba(255, 255, 255, 0.62);
+  color: #22312f;
+}
+
+    .content {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 36px 24px 120px;
+    }
+
+    .section {
+      margin: 0 0 84px;
+    }
+
+    .section__header {
+      max-width: 780px;
+      margin: 0 auto 26px;
+      text-align: center;
+    }
+
+    .section__header h2 {
+      margin: 0 0 10px;
+      font-size: clamp(24px, 3vw, 38px);
+      line-height: 1.15;
+    }
+
+    .section__header p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .slide-stage {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      padding: 10px 0;
+    }
+
+    .slide-frame {
+  width: min(100%, var(--slide-width));
+  aspect-ratio: 16 / 9;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+    .slide-frame--tall {
+  aspect-ratio: 16 / 9;
+    }
+
+    .slide-frame img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}  
+
+    .slide-placeholder {
+      width: calc(100% - 40px);
+      min-height: calc(100% - 40px);
+      margin: 20px;
+      border-radius: 18px;
+      border: 1.5px dashed rgba(31, 45, 42, 0.18);
+      background:
+        linear-gradient(135deg, rgba(56, 88, 73, 0.05), rgba(56, 88, 73, 0.015)),
+        repeating-linear-gradient(
+          -45deg,
+          rgba(56, 88, 73, 0.03),
+          rgba(56, 88, 73, 0.03) 16px,
+          rgba(255, 255, 255, 0.6) 16px,
+          rgba(255, 255, 255, 0.6) 32px
+        );
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: 30px;
+      color: var(--muted);
+    }
+
+    .slide-placeholder strong {
+      display: block;
+      color: var(--text);
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+
+    .caption {
+      max-width: 760px;
+      margin: 18px auto 0;
+      text-align: center;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .footer {
+      padding: 30px 24px 60px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    @media (max-width: 768px) {
+      .hero {
+        padding: 72px 20px 42px;
+      }
+
+      .content {
+        padding: 28px 16px 90px;
+      }
+
+      .section {
+        margin-bottom: 56px;
+      }
+
+      .slide-frame {
+        min-height: 360px;
+        border-radius: 18px;
+      }
+
+      .slide-frame--tall {
+        min-height: 500px;
+      }
+
+      .quick-nav__inner {
+        justify-content: flex-start;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        padding-bottom: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-shell">
+    <header class="hero" id="top">
+      <div class="hero__inner">
+        <span class="eyebrow">第10小组 作品展示</span>
+        <h1>POPMART<br />市场数据可视化</h1>
+        <p>
+          Labubu爆火的路径分析
+        </p>
+      </div>
+    </header>
+
+    <nav class="quick-nav">
+      <div class="quick-nav__inner">
+        <a href="#section-02">目录</a>
+        <a href="#section-03">发展时间线</a>
+        <a href="#section-04">市场数据</a>
+        <a href="#section-05">走红路径</a>
+        <a href="#section-06">热度数据</a>
+        <a href="#section-07">用户画像</a>
+        <a href="#section-08">数据源</a>
+        <a href="#top">回到顶部</a>
+      </div>
+    </nav>
+
+    <main class="content">
+      <!-- page 1 -->
+      <section class="section" id="section-01">
+        <div class="slide-stage">
+          <div class="slide-frame slide-frame--tall">
+            <!-- 替换方式：把下面的占位块删掉，改成 img 即可 -->
+            <!-- <img src="images/slide-01.png" alt="封面页" /> -->
+            <img src="Project_Labubu/LABUBU_pictures/1.png" alt="封面页" />
+          </div>
+        </div>
+      </section>
+
+    <!-- page 2-3 -->
+      <section class="section" id="section-02">
+        <div class="section__header">
+          <h2>01｜目录</h2>
+        </div>
+        <div class="slide-stage">
+          <div class="slide-frame">
+            <!-- <img src="images/slide-02.png" alt="项目背景" /> -->
+            <img src="Project_Labubu/LABUBU_pictures/2.png" alt="项目背景" />
+          </div>
+        </div>
+      </section>
+      <!-- page 3 -->
+      <section class="section" id="section-02">
+        <div class="slide-stage">
+          <div class="slide-frame">
+            <!-- <img src="images/slide-02.png" alt="项目背景" /> -->
+            <img src="Project_Labubu/LABUBU_pictures/3.png" alt="项目背景" />
+          </div>
+        </div>
+      </section>
+      
+      <!-- page 4 -->
+      <section class="section" id="section-03">
+        <div class="section__header">
+          <h2>02｜发展时间线</h2>
+        </div>
+        <div class="slide-stage">
+          <div class="slide-frame">
+            <!-- <img src="images/slide-03.png" alt="数据模块一" /> -->
+            <img src="Project_Labubu/LABUBU_pictures/4.png" alt="发展时间线" />
+          </div>
+        </div>
+      </section>
+
+    <!-- page 5-12 -->
+      <section class="section" id="section-04">
+        <div class="section__header">
+          <h2>03｜市场数据</h2>
+        </div>
+        <div class="slide-stage">
+          <div class="slide-frame slide-frame--tall">
+            <!-- <img src="images/slide-04.png" alt="数据模块二" /> -->
+            <img src="Project_Labubu/LABUBU_pictures/5.png" alt="数据模块二" />
+            </div>
+          </div>
+
+        <div class="slide-stage">
+          <div class="slide-frame slide-frame--tall">
+            <!-- <img src="images/slide-04.png" alt="数据模块二" /> -->
+            <img src="Project_Labubu/LABUBU_pictures/6.png" alt="数据模块二" />
+            </div>
+          </div>
+
+        <div class="slide-stage">
+          <div class="slide-frame slide-frame--tall">
+            <!-- <img src="images/slide-04.png" alt="数据模块二" /> -->
+            <img src="Project_Labubu/LABUBU_pictures/7.png" alt="数据模块二" />
+            </div>
+          </div>
+
+        <div class="slide-stage">
+          <div class="slide-frame slide-frame--tall">
+            <!-- <img src="images/slide-04.png" alt="数据模块二" /> -->
+            <img src="Project_Labubu/LABUBU_pictures/8.png" alt="数据模块二" />
+            </div>
+          </div>
+
+        <div class="slide-stage">
+          <div class="slide-frame slide-frame--tall">
+            <!-- <img src="images/slide-04.png" alt="数据模块二" /> -->
+            <img src="Project_Labubu/LABUBU_pictures/9.png" alt="数据模块二" />
+            </div>
+          </div>
+
+        <div class="slide-stage">
+          <div class="slide-frame slide-frame--tall">
+            <!-- <img src="images/slide-04.png" alt="数据模块二" /> -->
+            <img src="Project_Labubu/LABUBU_pictures/10.png" alt="数据模块二" />
+            </div>
+          </div>
+
+        <div class="slide-stage">
+          <div class="slide-frame slide-frame--tall">
+            <!-- <img src="images/slide-04.png" alt="数据模块二" /> -->
+            <img src="Project_Labubu/LABUBU_pictures/11.png" alt="数据模块二" />
+            </div>
+          </div>
+
+        <div class="slide-stage">
+          <div class="slide-frame slide-frame--tall">
+            <!-- <img src="images/slide-04.png" alt="数据模块二" /> -->
+            <img src="Project_Labubu/LABUBU_pictures/12.png" alt="数据模块二" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="section-05">
+        <div class="section__header">
+          <h2>04｜走红路径</h2>
+        </div>
+        <div class="slide-stage">
+          <div class="slide-frame">
+            <!-- <img src="images/slide-05.png" alt="结论页" /> -->
+            <img src="Project_Labubu/LABUBU_pictures/13.png" alt="走红路径" />
+          </div>
+        </div>
+      </section>
+
+      <!-- page 14-18 -->
+      <section class="section" id="section-06">
+        <div class="section__header">
+          <h2>04｜热度数据</h2>
+        </div>
+        <div class="slide-stage">
+          <div class="slide-frame">
+            <!-- <img src="images/slide-05.png" alt="结论页" /> -->
+            <img src="Project_Labubu/LABUBU_pictures/14.png" alt="热度1" />
+          </div>
+        </div>
+
+        <div class="slide-stage">
+          <div class="slide-frame">
+            <!-- <img src="images/slide-05.png" alt="结论页" /> -->
+            <img src="Project_Labubu/LABUBU_pictures/15.png" alt="热度2" />
+          </div>
+        </div>
+
+        <div class="slide-stage">
+          <div class="slide-frame">
+            <!-- <img src="images/slide-05.png" alt="结论页" /> -->
+            <img src="Project_Labubu/LABUBU_pictures/16.png" alt="热度3" />
+          </div>
+        </div>
+
+        <div class="slide-stage">
+          <div class="slide-frame">
+            <!-- <img src="images/slide-05.png" alt="结论页" /> -->
+            <img src="Project_Labubu/LABUBU_pictures/17.png" alt="热度4" />
+          </div>
+        </div>
+
+        <div class="slide-stage">
+          <div class="slide-frame">
+            <!-- <img src="images/slide-05.png" alt="结论页" /> -->
+            <img src="Project_Labubu/LABUBU_pictures/18.png" alt="热度5" />
+          </div>
+        </div>
+      </section>
+
+      <!-- page 19 -->
+      <section class="section" id="section-07">
+        <div class="section__header">
+          <h2>06｜用户画像</h2>
+        </div>
+        <div class="slide-stage">
+          <div class="slide-frame">
+            <!-- <img src="images/slide-05.png" alt="结论页" /> -->
+            <img src="Project_Labubu/LABUBU_pictures/19.png" alt="走红路径" />
+          </div>
+        </div>
+      </section>
+
+      <!-- page 20 -->
+      <section class="section" id="section-08">
+        <div class="section__header">
+          <h2>07｜数据源</h2>
+        </div>
+        <div class="slide-stage">
+          <div class="slide-frame">
+            <!-- <img src="images/slide-05.png" alt="结论页" /> -->
+            <img src="Project_Labubu/LABUBU_pictures/20.png" alt="走红路径" />
+          </div>
+        </div>
+      </section>
+
+      <!-- page 21 -->
+      <section class="section" id="section-08">
+        <div class="slide-stage">
+          <div class="slide-frame">
+            <!-- <img src="images/slide-05.png" alt="结论页" /> -->
+            <img src="Project_Labubu/LABUBU_pictures/21.png" alt="结束" />
+          </div>
+        </div>
+      </section>
+    </main>
+
+
+  </div>
+</body>
+</html>
