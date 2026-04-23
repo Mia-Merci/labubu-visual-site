@@ -254,6 +254,56 @@
         padding-bottom: 10px;
       }
     }
+
+    @media (max-width: 768px) {
+
+  /* 1️⃣ 标题缩小 */
+  h1 {
+    font-size: 28px;
+    line-height: 1.2;
+  }
+
+  /* 2️⃣ 副标题 */
+  .hero p {
+    font-size: 14px;
+  }
+
+  /* 3️⃣ 导航变成横向滚动 */
+  .quick-nav__inner {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 8px;
+    padding-bottom: 10px;
+  }
+
+  .quick-nav a {
+    flex: 0 0 auto;
+    font-size: 12px;
+    padding: 8px 12px;
+  }
+
+  /* 4️⃣ 图片区域缩小一点 */
+  .slide-frame {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+  }
+
+  /* 5️⃣ section间距变小 */
+  .section {
+    margin-bottom: 40px;
+  }
+
+  /* 6️⃣ 页面整体padding缩小 */
+  .content {
+    padding: 20px 12px 60px;
+  }
+
+  /* 7️⃣ 圆角导航改成更适合手机 */
+  .quick-nav a {
+    border-radius: 20px;
+  }
+}
   </style>
 </head>
 <body>
